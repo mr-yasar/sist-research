@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiFileText, FiClock, FiCheckCircle, FiUpload, FiX } from 'react-icons/fi';
+import { FiPlus, FiFileText, FiClock, FiCheckCircle, FiUpload, FiX, FiBookOpen, FiDownload, FiFile } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { submissionService } from '../../services/submissionService';
+import { resourceService } from '../../services/resourceService';
 import { SUBMISSION_TYPES } from '../../data/mockData';
 import FileUpload from '../../components/FileUpload';
 import StatusBadge from '../../components/StatusBadge';
@@ -12,6 +13,7 @@ import { formatDate } from '../../utils/helpers';
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [resources, setResources] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [uploadData, setUploadData]   = useState(null);
   const [title, setTitle]             = useState('');
@@ -54,10 +56,26 @@ export default function StudentDashboard() {
     }
   };
 
+  useEffect(() => {
+    resourceService.getAll().then(setResources);
+  }, []);
+
+  const handleResourceDownload = (res) => {
+    if (res.file_url) {
+      const a = document.createElement('a');
+      a.href = res.file_url;
+      a.download = res.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   const tabs = [
-    { id: 'dashboard', label: 'Overview' },
-    { id: 'upload', label: 'Upload Document' },
-    { id: 'history', label: 'My Submissions' }
+    { id: 'dashboard', label: 'Overview', icon: <FiFileText /> },
+    { id: 'upload', label: 'Upload Document', icon: <FiUpload /> },
+    { id: 'history', label: 'My Submissions', icon: <FiClock /> },
+    { id: 'resources', label: 'Learning Resources', icon: <FiBookOpen /> }
   ];
 
   return (
@@ -238,6 +256,52 @@ export default function StudentDashboard() {
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'resources' && (
+            <motion.div key="resources" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <div className="glass rounded-2xl overflow-hidden">
+                <div className="p-6 border-b border-white/10 bg-white/5">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FiBookOpen className="text-primary-400" /> Learning Resources from Faculty & HOD
+                  </h3>
+                  <p className="text-white/50 text-sm mt-1">Download materials shared by your faculty to learn from their experience.</p>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {resources.length === 0 ? (
+                    <div className="p-10 text-center">
+                      <FiBookOpen className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                      <p className="text-white/40">No resources shared yet. Check back later!</p>
+                    </div>
+                  ) : (
+                    resources.map((res, i) => (
+                      <motion.div key={res.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                        className="p-6 flex items-start gap-4 hover:bg-white/5 transition-colors">
+                        <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                          <FiFile className="text-indigo-400 w-6 h-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white">{res.title}</p>
+                          {res.description && <p className="text-white/50 text-sm mt-1">{res.description}</p>}
+                          <div className="flex items-center gap-3 mt-2 text-xs text-white/40 flex-wrap">
+                            <span className="px-2 py-0.5 bg-primary-500/20 text-primary-300 rounded-full capitalize">{res.uploader_role}</span>
+                            <span>By {res.uploader_name}</span>
+                            <span>·</span>
+                            <span>{res.file_name}</span>
+                            <span>·</span>
+                            <span>{formatDate(res.created_at)}</span>
+                          </div>
+                        </div>
+                        <button onClick={() => handleResourceDownload(res)}
+                          className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500/20 text-primary-300 hover:bg-primary-500/40 transition-colors text-sm font-medium">
+                          <FiDownload className="w-4 h-4" /> Download
+                        </button>
+                      </motion.div>
+                    ))
                   )}
                 </div>
               </div>
