@@ -1,0 +1,183 @@
+// ============================================================
+// Mock Data — Seed data for demo
+// Backend APIs and file storage will be integrated in the next phase.
+// ============================================================
+
+export const MOCK_USERS = [
+  {
+    id: 'u1',
+    name: 'Arjun Kumar',
+    email: 'student@sist.ac.in',
+    password: 'password',
+    role: 'student',
+    department: 'Computer Science & Engineering',
+    regNo: '40212345',
+    year: '3rd Year',
+    avatar: 'AK',
+    avatarColor: '#6366f1',
+  },
+  {
+    id: 'u2',
+    name: 'Dr. Priya Sharma',
+    email: 'faculty@sist.ac.in',
+    password: 'password',
+    role: 'faculty',
+    department: 'Computer Science & Engineering',
+    designation: 'Associate Professor',
+    avatar: 'PS',
+    avatarColor: '#8b5cf6',
+  },
+  {
+    id: 'u3',
+    name: 'Dr. Rajesh Babu',
+    email: 'hod@sist.ac.in',
+    password: 'password',
+    role: 'hod',
+    department: 'Computer Science & Engineering',
+    designation: 'Head of Department',
+    avatar: 'RB',
+    avatarColor: '#06b6d4',
+  },
+  {
+    id: 'u4',
+    name: 'Dr. Meenakshi Iyer',
+    email: 'admin@sist.ac.in',
+    password: 'password',
+    role: 'admin',
+    department: 'Administration',
+    designation: 'Academic Administrator',
+    avatar: 'MI',
+    avatarColor: '#f59e0b',
+  },
+];
+
+export const SUBMISSION_TYPES = [
+  'Research Paper',
+  'Journal Article',
+  'Conference Paper',
+  'Internship Report',
+  'Project Report',
+  'Patent Application',
+  'Book Chapter',
+];
+
+export const STATUS_FLOW = [
+  'Draft',
+  'Submitted',
+  'Faculty Review',
+  'HOD Approval',
+  'Approved',
+];
+
+export const MOCK_SUBMISSIONS = [
+  {
+    id: 'sub1',
+    studentId: 'u1',
+    studentName: 'Arjun Kumar',
+    department: 'Computer Science & Engineering',
+    title: 'Deep Learning Approaches for Medical Image Segmentation',
+    type: 'Research Paper',
+    fileName: 'dl_medical_imaging.pdf',
+    fileSize: 2457600,
+    fileType: 'application/pdf',
+    fileDataUrl: null,
+    date: '2026-04-10T10:30:00Z',
+    status: 'HOD Approval',
+    comments: [
+      {
+        id: 'c1',
+        author: 'Dr. Priya Sharma',
+        role: 'faculty',
+        text: 'Excellent methodology section. Please add more references in the literature review.',
+        timestamp: '2026-04-12T09:15:00Z',
+      },
+    ],
+    history: [
+      { action: 'Submitted', role: 'student', user: 'Arjun Kumar', timestamp: '2026-04-10T10:30:00Z' },
+      { action: 'Moved to Faculty Review', role: 'faculty', user: 'Dr. Priya Sharma', timestamp: '2026-04-11T14:20:00Z' },
+      { action: 'Moved to HOD Approval', role: 'faculty', user: 'Dr. Priya Sharma', timestamp: '2026-04-12T09:20:00Z' },
+    ],
+  },
+  {
+    id: 'sub2',
+    studentId: 'u1',
+    studentName: 'Arjun Kumar',
+    department: 'Computer Science & Engineering',
+    title: 'Blockchain-Based Secure Voting System',
+    type: 'Project Report',
+    fileName: 'blockchain_voting.docx',
+    fileSize: 1024000,
+    fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    fileDataUrl: null,
+    date: '2026-04-15T11:00:00Z',
+    status: 'Faculty Review',
+    comments: [],
+    history: [
+      { action: 'Submitted', role: 'student', user: 'Arjun Kumar', timestamp: '2026-04-15T11:00:00Z' },
+      { action: 'Moved to Faculty Review', role: 'faculty', user: 'Dr. Priya Sharma', timestamp: '2026-04-16T08:45:00Z' },
+    ],
+  },
+  {
+    id: 'sub3',
+    studentId: 'u1',
+    studentName: 'Arjun Kumar',
+    department: 'Computer Science & Engineering',
+    title: 'IoT-Based Smart Agriculture Monitoring',
+    type: 'Conference Paper',
+    fileName: 'iot_agriculture.pdf',
+    fileSize: 3145728,
+    fileType: 'application/pdf',
+    fileDataUrl: null,
+    date: '2026-04-20T15:30:00Z',
+    status: 'Approved',
+    comments: [
+      {
+        id: 'c2',
+        author: 'Dr. Priya Sharma',
+        role: 'faculty',
+        text: 'Well-structured paper. Approved for HOD review.',
+        timestamp: '2026-04-21T10:00:00Z',
+      },
+      {
+        id: 'c3',
+        author: 'Dr. Rajesh Babu',
+        role: 'hod',
+        text: 'Outstanding work. Approved for submission to ICICT 2026.',
+        timestamp: '2026-04-22T16:30:00Z',
+      },
+    ],
+    history: [
+      { action: 'Submitted', role: 'student', user: 'Arjun Kumar', timestamp: '2026-04-20T15:30:00Z' },
+      { action: 'Moved to Faculty Review', role: 'faculty', user: 'Dr. Priya Sharma', timestamp: '2026-04-21T09:00:00Z' },
+      { action: 'Moved to HOD Approval', role: 'faculty', user: 'Dr. Priya Sharma', timestamp: '2026-04-21T10:05:00Z' },
+      { action: 'Approved', role: 'hod', user: 'Dr. Rajesh Babu', timestamp: '2026-04-22T16:30:00Z' },
+    ],
+  },
+  {
+    id: 'sub4',
+    studentId: 'u1',
+    studentName: 'Arjun Kumar',
+    department: 'Computer Science & Engineering',
+    title: 'Natural Language Processing for Tamil Text Classification',
+    type: 'Journal Article',
+    fileName: 'nlp_tamil.pdf',
+    fileSize: 1843200,
+    fileType: 'application/pdf',
+    fileDataUrl: null,
+    date: '2026-04-22T09:00:00Z',
+    status: 'Rejected',
+    comments: [
+      {
+        id: 'c4',
+        author: 'Dr. Priya Sharma',
+        role: 'faculty',
+        text: 'The dataset used is outdated. Please use a recent corpus and resubmit.',
+        timestamp: '2026-04-23T11:00:00Z',
+      },
+    ],
+    history: [
+      { action: 'Submitted', role: 'student', user: 'Arjun Kumar', timestamp: '2026-04-22T09:00:00Z' },
+      { action: 'Rejected', role: 'faculty', user: 'Dr. Priya Sharma', timestamp: '2026-04-23T11:00:00Z' },
+    ],
+  },
+];
