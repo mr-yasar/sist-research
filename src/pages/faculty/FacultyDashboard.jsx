@@ -12,14 +12,17 @@ export default function FacultyDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const all = submissionService.getAll();
-    const pending = all.filter(s => s.status === 'Faculty Review' || s.status === 'Submitted');
-    setQueue(pending);
-    setStats({
-      pending: pending.length,
-      approved: all.filter(s => ['HOD Approval', 'Approved'].includes(s.status)).length,
-      rejected: all.filter(s => s.status === 'Rejected').length,
-    });
+    const fetchData = async () => {
+      const all = await submissionService.getAll();
+      const pending = all.filter(s => s.status === 'Faculty Review' || s.status === 'Submitted');
+      setQueue(pending);
+      setStats({
+        pending: pending.length,
+        approved: all.filter(s => ['HOD Approval', 'Approved'].includes(s.status)).length,
+        rejected: all.filter(s => s.status === 'Rejected').length,
+      });
+    };
+    fetchData();
   }, []);
 
   return (

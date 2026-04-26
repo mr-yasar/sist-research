@@ -16,21 +16,24 @@ export default function SubmissionDetail() {
   const [comment, setComment] = useState('');
 
   useEffect(() => {
-    const data = submissionService.getById(id);
-    if (!data) navigate(-1);
-    setSub(data);
+    const fetchData = async () => {
+      const data = await submissionService.getById(id);
+      if (!data) navigate(-1);
+      setSub(data);
+    };
+    fetchData();
   }, [id, navigate]);
 
-  const handleStatusChange = (newStatus) => {
-    const updated = submissionService.updateStatus(id, newStatus, user, comment);
+  const handleStatusChange = async (newStatus) => {
+    const updated = await submissionService.updateStatus(id, newStatus, user, comment);
     setSub(updated);
     setComment('');
   };
 
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault();
     if (!comment.trim()) return;
-    const updated = submissionService.addComment(id, comment, user);
+    const updated = await submissionService.addComment(id, comment, user);
     setSub(updated);
     setComment('');
   };

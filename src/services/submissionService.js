@@ -1,185 +1,106 @@
-// ============================================================
-// Submission Service — CRUD on localStorage
-// Backend APIs and file storage will be integrated in the next phase.
-// ============================================================
-
-import { MOCK_SUBMISSIONS } from '../data/mockData';
-import { auditService } from './auditService';
+import { supabase } from '../lib/supabaseClient';
 import { notificationService } from './notificationService';
-
-const STORE_KEY = 'sist_submissions';
-
-const load = () => {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
-    // Seed on first load
-    localStorage.setItem(STORE_KEY, JSON.stringify(MOCK_SUBMISSIONS));
-    return MOCK_SUBMISSIONS;
-  } catch {
-    return [];
-  }
-};
-
-const save = (submissions) => {
-  localStorage.setItem(STORE_KEY, JSON.stringify(submissions));
-};
+import { auditService } from './auditService';
 
 export const submissionService = {
-  /** GET /api/submissions */
-  getAll() {
-    return load();
+  async getAll() {
+    const { data, error } = await supabase.from('submissions').select('*, comments(*), submission_history(*)').order('created_at', { ascending: false });
+    if (error) { console.error(error); return []; }
+    return data;
   },
 
-  /** GET /api/submissions?studentId=x */
-  getByStudent(studentId) {
-    return load().filter((s) => s.studentId === studentId);
+  async getByStudent(studentId) {
+    const { data, error } = await supabase.from('submissions').select('*, comments(*), submission_history(*)').eq('student_id', studentId).order('created_at', { ascending: false });
+    if (error) { console.error(error); return []; }
+    return data;
   },
 
-  /** GET /api/submissions?status=x */
-  getByStatus(status) {
-    return load().filter((s) => s.status === status);
+  async getByStatus(status) {
+    const { data, error } = await supabase.from('submissions').select('*, comments(*), submission_history(*)').eq('status', status).order('created_at', { ascending: false });
+    if (error) { console.error(error); return []; }
+    return data;
   },
 
-  /** GET /api/submissions/:id */
-  getById(id) {
-    return load().find((s) => s.id === id) || null;
+  async getById(id) {
+    const { data, error } = await supabase.from('submissions').select('*, comments(*), submission_history(*)').eq('id', id).single();
+    if (error) { console.error(error); return null; }
+    return data;
   },
 
-  /** POST /api/submissions */
-  create(data, currentUser) {
-    const submissions = load();
-    const newSub = {
-      id: `sub_${Date.now()}`,
-      studentId:   currentUser.id,
-      studentName: currentUser.name,
-      department:  currentUser.department,
-      date: new Date().toISOString(),
+  async create(data, currentUser) {
+    const { data: newSub, error } = await supabase.from('submissions').insert([{
+      title: data.title,
+      type: data.type,
       status: 'Submitted',
-      comments: [],
-      history: [
-        {
-          action:    'Submitted',
-          role:      'student',
-          user:      currentUser.name,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      ...data,
-    };
-    submissions.unshift(newSub);
-    save(submissions);
+      student_id: currentUser.id,
+      student_name: currentUser.name,
+      file_name: data.fileName,
+      file_size: data.fileSize,
+      file_type: data.fileType,
+      file_url: data.fileDataUrl // For now, we will save the base64 or storage url here
+    }]).select().single();
 
-    auditService.log({
-      action:     'SUBMISSION_CREATED',
-      entityId:   newSub.id,
-      entityType: 'submission',
-      user:       currentUser.name,
-      role:       currentUser.role,
-      detail:     `Created submission: ${newSub.title}`,
-    });
+    if (error) throw new Error(error.message);
 
+    await supabase.from('submission_history').insert([{
+      submission_id: newSub.id,
+      status: 'Submitted',
+      actor_name: currentUser.name
+    }]);
+
+    auditService.log({ action: 'SUBMISSION_CREATED', entityId: newSub.id, entityType: 'submission', user: currentUser.name, role: currentUser.role, detail: `Created submission: ${newSub.title}` });
     return newSub;
   },
 
-  /** PATCH /api/submissions/:id/status */
-  updateStatus(id, status, currentUser, comment = '') {
-    const submissions = load();
-    const idx = submissions.findIndex((s) => s.id === id);
-    if (idx === -1) throw new Error('Submission not found');
+  async updateStatus(id, status, currentUser, commentText = '') {
+    const { data: updatedSub, error } = await supabase.from('submissions').update({ status }).eq('id', id).select().single();
+    if (error) throw new Error(error.message);
 
-    const prev = submissions[idx];
-    submissions[idx] = {
-      ...prev,
-      status,
-      history: [
-        ...prev.history,
-        {
-          action:    status === 'Rejected' ? 'Rejected' : `Moved to ${status}`,
-          role:      currentUser.role,
-          user:      currentUser.name,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    };
+    await supabase.from('submission_history').insert([{
+      submission_id: id,
+      status: status === 'Rejected' ? 'Rejected' : `Moved to ${status}`,
+      comment: commentText,
+      actor_name: currentUser.name
+    }]);
 
-    if (comment.trim()) {
-      submissions[idx].comments = [
-        ...prev.comments,
-        {
-          id:        `c_${Date.now()}`,
-          author:    currentUser.name,
-          role:      currentUser.role,
-          text:      comment.trim(),
-          timestamp: new Date().toISOString(),
-        },
-      ];
+    if (commentText.trim()) {
+      await supabase.from('comments').insert([{
+        submission_id: id,
+        text: commentText.trim(),
+        author_name: currentUser.name,
+        author_role: currentUser.role
+      }]);
     }
 
-    save(submissions);
+    notificationService.push({ userId: updatedSub.student_id, title: `Submission ${status}`, message: `Status changed to ${status}`, type: 'info' });
+    auditService.log({ action: 'STATUS_UPDATED', entityId: id, entityType: 'submission', user: currentUser.name, role: currentUser.role, detail: `Status changed to ${status}` });
 
-    // Push notification to submission owner
-    notificationService.push({
-      userId:  prev.studentId,
-      title:   `Submission ${status === 'Approved' ? '✅ Approved' : status === 'Rejected' ? '❌ Rejected' : '🔄 Updated'}`,
-      message: `"${prev.title}" status changed to ${status}`,
-      type:    status === 'Approved' ? 'success' : status === 'Rejected' ? 'error' : 'info',
-    });
-
-    auditService.log({
-      action:     'STATUS_UPDATED',
-      entityId:   id,
-      entityType: 'submission',
-      user:       currentUser.name,
-      role:       currentUser.role,
-      detail:     `Status changed from ${prev.status} to ${status}`,
-    });
-
-    return submissions[idx];
+    // Refetch the fully populated submission
+    return this.getById(id);
   },
 
-  /** POST /api/submissions/:id/comments */
-  addComment(id, text, currentUser) {
-    const submissions = load();
-    const idx = submissions.findIndex((s) => s.id === id);
-    if (idx === -1) throw new Error('Submission not found');
+  async addComment(id, text, currentUser) {
+    const { error } = await supabase.from('comments').insert([{
+      submission_id: id,
+      text: text.trim(),
+      author_name: currentUser.name,
+      author_role: currentUser.role
+    }]);
+    if (error) throw new Error(error.message);
 
-    const comment = {
-      id:        `c_${Date.now()}`,
-      author:    currentUser.name,
-      role:      currentUser.role,
-      text:      text.trim(),
-      timestamp: new Date().toISOString(),
-    };
-
-    submissions[idx] = {
-      ...submissions[idx],
-      comments: [...submissions[idx].comments, comment],
-    };
-    save(submissions);
-
-    auditService.log({
-      action:     'COMMENT_ADDED',
-      entityId:   id,
-      entityType: 'submission',
-      user:       currentUser.name,
-      role:       currentUser.role,
-      detail:     `Comment added`,
-    });
-
-    return submissions[idx];
+    auditService.log({ action: 'COMMENT_ADDED', entityId: id, entityType: 'submission', user: currentUser.name, role: currentUser.role, detail: `Comment added` });
+    return this.getById(id);
   },
 
-  /** Stats for analytics */
-  getStats() {
-    const all = load();
+  async getStats() {
+    const all = await this.getAll();
     return {
-      total:          all.length,
-      submitted:      all.filter((s) => s.status === 'Submitted').length,
-      facultyReview:  all.filter((s) => s.status === 'Faculty Review').length,
-      hodApproval:    all.filter((s) => s.status === 'HOD Approval').length,
-      approved:       all.filter((s) => s.status === 'Approved').length,
-      rejected:       all.filter((s) => s.status === 'Rejected').length,
+      total: all.length,
+      submitted: all.filter((s) => s.status === 'Submitted').length,
+      facultyReview: all.filter((s) => s.status === 'Faculty Review').length,
+      hodApproval: all.filter((s) => s.status === 'HOD Approval').length,
+      approved: all.filter((s) => s.status === 'Approved').length,
+      rejected: all.filter((s) => s.status === 'Rejected').length,
     };
-  },
+  }
 };

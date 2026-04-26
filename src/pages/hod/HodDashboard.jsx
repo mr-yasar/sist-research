@@ -21,19 +21,22 @@ export default function HodDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const all = submissionService.getAll();
-    setQueue(all.filter(s => s.status === 'HOD Approval'));
-    
-    const stats = submissionService.getStats();
-    setPieData([
-      { name: 'Submitted', value: stats.submitted },
-      { name: 'Faculty Review', value: stats.facultyReview },
-      { name: 'HOD Approval', value: stats.hodApproval },
-      { name: 'Approved', value: stats.approved },
-      { name: 'Rejected', value: stats.rejected },
-    ].filter(d => d.value > 0));
+    const fetchData = async () => {
+      const all = await submissionService.getAll();
+      setQueue(all.filter(s => s.status === 'HOD Approval'));
+      
+      const stats = await submissionService.getStats();
+      setPieData([
+        { name: 'Submitted', value: stats.submitted },
+        { name: 'Faculty Review', value: stats.facultyReview },
+        { name: 'HOD Approval', value: stats.hodApproval },
+        { name: 'Approved', value: stats.approved },
+        { name: 'Rejected', value: stats.rejected },
+      ].filter(d => d.value > 0));
 
-    setBarData(groupByMonth(all));
+      setBarData(groupByMonth(all));
+    };
+    fetchData();
   }, []);
 
   return (

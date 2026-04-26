@@ -8,25 +8,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const current = authService.getCurrentUser();
-    setUser(current);
-    setLoading(false);
+    const initAuth = async () => {
+      const current = await authService.getCurrentUser();
+      setUser(current);
+      setLoading(false);
+    };
+    initAuth();
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const { user: u } = authService.login(email, password);
+    const { user: u } = await authService.login(email, password);
     setUser(u);
     return u;
   }, []);
 
   const register = useCallback(async (userData) => {
-    const { user: u } = authService.register(userData);
+    const { user: u } = await authService.register(userData);
     setUser(u);
     return u;
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
     setUser(null);
   }, []);
 

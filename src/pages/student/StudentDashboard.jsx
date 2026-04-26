@@ -20,7 +20,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (user) {
-      setSubmissions(submissionService.getByStudent(user.id));
+      submissionService.getByStudent(user.id).then(setSubmissions);
     }
   }, [user]);
 
@@ -30,23 +30,28 @@ export default function StudentDashboard() {
     approved: submissions.filter(s => s.status === 'Approved').length,
   };
 
-  const handleCreate = (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
     if (!uploadData || !title.trim()) return;
 
-    const newSub = submissionService.create({
-      title,
-      type,
-      fileName: uploadData.fileName,
-      fileSize: uploadData.fileSize,
-      fileType: uploadData.fileType,
-      fileDataUrl: uploadData.fileDataUrl,
-    }, user);
+    try {
+      const newSub = await submissionService.create({
+        title,
+        type,
+        fileName: uploadData.fileName,
+        fileSize: uploadData.fileSize,
+        fileType: uploadData.fileType,
+        fileDataUrl: uploadData.fileDataUrl,
+      }, user);
 
-    setSubmissions([newSub, ...submissions]);
-    setUploadData(null);
-    setTitle('');
-    setActiveTab('history');
+      setSubmissions([newSub, ...submissions]);
+      setUploadData(null);
+      setTitle('');
+      setActiveTab('history');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit: ' + err.message);
+    }
   };
 
   const tabs = [
