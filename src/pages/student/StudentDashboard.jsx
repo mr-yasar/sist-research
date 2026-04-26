@@ -209,7 +209,7 @@ export default function StudentDashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white/70 mb-1.5">File Upload</label>
-                    <FileUpload onFileReady={setUploadData} />
+                    <FileUpload onFileSelect={setUploadData} />
                   </div>
                   <button type="submit" disabled={!uploadData || !title.trim()} className={`btn-primary w-full mt-4 ${(!uploadData || !title.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     Submit Document
@@ -248,7 +248,7 @@ export default function StudentDashboard() {
                               <div className="flex items-center gap-3 mt-2 text-sm text-white/40">
                                 <span className="bg-white/10 px-2 py-0.5 rounded text-white/70">{sub.type}</span>
                                 <span>•</span>
-                                <span>{formatDate(sub.date)}</span>
+                                <span>{formatDate(sub.created_at || sub.date)}</span>
                               </div>
                             </div>
                             <StatusBadge status={sub.status} size="lg" />

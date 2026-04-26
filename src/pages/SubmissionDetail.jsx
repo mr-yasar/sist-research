@@ -40,31 +40,46 @@ export default function SubmissionDetail() {
 
   if (!sub) return null;
 
-  const fileInfo = fileTypeInfo(sub.fileType);
+  const fileInfo = fileTypeInfo(sub.file_type);
 
   // Determine actions based on role and status
   const canReviewFaculty = user?.role === 'faculty' && ['Submitted', 'Faculty Review'].includes(sub.status);
   const canReviewHOD = user?.role === 'hod' && sub.status === 'HOD Approval';
 
   const handleDownload = () => {
-    if (sub.fileDataUrl) {
-      // Real file uploaded during this session
+    const url = sub.file_url;
+    const fileName = sub.file_name || 'download';
+    const mimeType = sub.file_type || 'application/octet-stream';
+
+    if (!url) {
+      alert('No file attached to this submission.');
+      return;
+    }
+
+    // Handle base64 data URLs - convert to Blob with correct MIME type
+    if (url.startsWith('data:')) {
+      const base64 = url.split(',')[1];
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = sub.fileDataUrl;
-      a.download = sub.fileName;
+      a.href = blobUrl;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
     } else {
-      // Mock seed data fallback - generate a dummy text file
-      const blob = new Blob([`Dummy content for ${sub.title}. (Real file storage is not connected in this demo)`], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
+      // Regular URL (e.g. Supabase Storage)
       const a = document.createElement('a');
       a.href = url;
-      a.download = sub.fileName;
+      a.download = fileName;
+      a.target = '_blank';
       document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     }
   };
 
@@ -77,7 +92,7 @@ export default function SubmissionDetail() {
         </button>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{sub.title}</h2>
-          <p className="text-white/50 text-sm mt-1">Submitted by {sub.studentName} on {formatDate(sub.date)}</p>
+          <p className="text-white/50 text-sm mt-1">Submitted by {sub.student_name} on {formatDate(sub.created_at)}</p>
         </div>
         <div className="hidden sm:block">
           <StatusBadge status={sub.status} size="lg" />
@@ -98,7 +113,7 @@ export default function SubmissionDetail() {
               <div className="flex-1 space-y-3">
                 <div>
                   <p className="text-sm text-white/40 mb-1">File Name</p>
-                  <p className="text-white font-medium break-all">{sub.fileName}</p>
+                  <p className="text-white font-medium break-all">{sub.file_name}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -107,7 +122,7 @@ export default function SubmissionDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-white/40 mb-1">Size</p>
-                    <p className="text-white">{formatFileSize(sub.fileSize)}</p>
+                    <p className="text-white">{formatFileSize(sub.file_size)}</p>
                   </div>
                 </div>
                 <button
@@ -128,23 +143,23 @@ export default function SubmissionDetail() {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {sub.comments.length === 0 ? (
+              {(sub.comments || []).length === 0 ? (
                 <div className="h-full flex items-center justify-center text-white/30 text-sm">
                   No comments yet.
                 </div>
               ) : (
-                sub.comments.map(c => (
+                (sub.comments || []).map(c => (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={c.id} className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary-500/20 text-primary-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                      {c.author.substring(0, 2).toUpperCase()}
+                      {(c.author_name || c.author || '?').substring(0, 2).toUpperCase()}
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none p-3 max-w-[85%]">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-white/80">{c.author}</span>
-                        <span className="text-[10px] uppercase text-white/40 bg-white/5 px-1.5 py-0.5 rounded">{c.role}</span>
+                        <span className="text-sm font-semibold text-white/80">{c.author_name || c.author}</span>
+                        <span className="text-[10px] uppercase text-white/40 bg-white/5 px-1.5 py-0.5 rounded">{c.author_role || c.role}</span>
                       </div>
                       <p className="text-white/70 text-sm">{c.text}</p>
-                      <p className="text-white/30 text-xs mt-2">{formatDate(c.timestamp)}</p>
+                      <p className="text-white/30 text-xs mt-2">{formatDate(c.created_at || c.timestamp)}</p>
                     </div>
                   </motion.div>
                 ))
@@ -202,7 +217,7 @@ export default function SubmissionDetail() {
               <FiClock className="text-white/40" />
               <h3 className="font-semibold text-white">Approval Status</h3>
             </div>
-            <Timeline status={sub.status} history={sub.history} />
+            <Timeline status={sub.status} history={sub.submission_history || sub.history || []} />
           </div>
         </div>
       </div>

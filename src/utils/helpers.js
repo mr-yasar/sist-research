@@ -79,7 +79,9 @@ export const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oc
 export const groupByMonth = (submissions) => {
   const map = {};
   submissions.forEach((s) => {
-    const m = MONTHS[new Date(s.date).getMonth()];
+    const dateStr = s.created_at || s.date;
+    if (!dateStr) return;
+    const m = MONTHS[new Date(dateStr).getMonth()];
     map[m] = (map[m] || 0) + 1;
   });
   return MONTHS.map((m) => ({ month: m, count: map[m] || 0 }));

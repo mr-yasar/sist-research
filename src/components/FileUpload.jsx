@@ -24,7 +24,7 @@ function FileIcon({ mimeType, size = 24 }) {
 }
 
 // Backend APIs and file storage will be integrated in the next phase.
-export default function FileUpload({ onFileReady, disabled = false }) {
+export default function FileUpload({ onFileSelect, disabled = false }) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile]         = useState(null);
   const [preview, setPreview]   = useState(null);
@@ -50,7 +50,7 @@ export default function FileUpload({ onFileReady, disabled = false }) {
         clearInterval(iv);
         setProgress(100);
         setStatus('uploaded');
-        onFileReady?.({
+            onFileSelect?.({
           file,
           fileName:    f.name,
           fileSize:    f.size,
@@ -97,7 +97,7 @@ export default function FileUpload({ onFileReady, disabled = false }) {
   const remove = () => {
     setFile(null); setPreview(null);
     setProgress(0); setStatus('idle'); setError('');
-    onFileReady?.(null);
+    onFileSelect?.(null);
   };
 
   return (
