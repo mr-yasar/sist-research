@@ -34,7 +34,8 @@ const DOT_STYLE = {
 export default function Timeline({ status, history = [] }) {
   const historyMap = {};
   history.forEach((h) => {
-    const step = h.action.replace('Moved to ', '').replace('Approved', 'Approved');
+    if (!h.status) return;
+    const step = h.status.replace('Moved to ', '');
     historyMap[step] = h;
   });
 
@@ -43,7 +44,7 @@ export default function Timeline({ status, history = [] }) {
       {STEPS.map((step, i) => {
         const state = stepState(step, status);
         const hist  = history.find(
-          (h) => h.action.includes(step) || (step === 'Approved' && h.action === 'Approved'),
+          (h) => h.status && (h.status.includes(step) || (step === 'Approved' && h.status === 'Approved')),
         );
 
         return (
@@ -74,7 +75,7 @@ export default function Timeline({ status, history = [] }) {
                   animate={{ opacity: 1, x: 0 }}
                   className="mt-1"
                 >
-                  <p className="text-xs text-white/50">{hist.user} · {formatDateTime(hist.timestamp)}</p>
+                  <p className="text-xs text-white/50">{hist.actor_name || hist.user} · {formatDateTime(hist.created_at || hist.timestamp)}</p>
                 </motion.div>
               )}
             </div>
@@ -89,10 +90,10 @@ export default function Timeline({ status, history = [] }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-red-300">Rejected</p>
-            {history.find((h) => h.action === 'Rejected') && (
+            {history.find((h) => h.status === 'Rejected' || h.action === 'Rejected') && (
               <p className="text-xs text-white/50 mt-1">
-                {history.find((h) => h.action === 'Rejected').user} ·{' '}
-                {formatDateTime(history.find((h) => h.action === 'Rejected').timestamp)}
+                {history.find((h) => h.status === 'Rejected' || h.action === 'Rejected').actor_name || history.find((h) => h.status === 'Rejected' || h.action === 'Rejected').user} ·{' '}
+                {formatDateTime(history.find((h) => h.status === 'Rejected' || h.action === 'Rejected').created_at || history.find((h) => h.status === 'Rejected' || h.action === 'Rejected').timestamp)}
               </p>
             )}
           </div>
