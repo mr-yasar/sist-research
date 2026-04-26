@@ -28,28 +28,25 @@ export const authService = {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        // Pass metadata so we can use it if needed
+        data: { name, role, department }
+      }
     });
     if (authError) throw new Error(authError.message);
-    if (!authData.user) throw new Error('Sign up failed');
+    
+    const userId = authData.user?.id;
+    if (!userId) throw new Error('Sign up failed. Please try again.');
 
     // 2. Create profile in the database
     const avatarColor = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899'][Math.floor(Math.random() * 5)];
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .insert([
-        {
-          id: authData.user.id,
-          name,
-          email,
-          role,
-          department,
-          avatar_color: avatarColor
-        }
-      ])
+      .insert([{ id: userId, name, email, role, department, avatar_color: avatarColor }])
       .select()
       .single();
 
-    if (profileError) throw new Error('Could not create user profile.');
+    if (profileError) throw new Error('Could not create user profile: ' + profileError.message);
 
     const user = { ...authData.user, ...profile };
     return { user };
