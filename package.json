@@ -1,7 +1,8 @@
 {
-  "name": "2nprj",
+  "name": "sist-research",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Faculty Activity & Research Tracker — A production-grade academic SaaS platform for Sathyabama Institute.",
   "type": "module",
   "scripts": {
     "dev": "vite",
